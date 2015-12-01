@@ -4,6 +4,7 @@
  * Implementacion del algoritmo Dhont
  *
  * @author Juan Manuel Fernandez <juanmf@gmail.com>
+ * @author Angel Gonzalo Ruiz <angoru@gmail.com>
  */
 class Dhont
 {
@@ -14,29 +15,71 @@ class Dhont
      * @var array
      */
     private $divisores;
-    
+    private $listas;
+    private $bancas;
+    private $reparto_bancas;
+    private $resultados;
+
+    /**
+     * @param $bancas
+     * @param $listas
+     */
+    function __construct($bancas, $listas) 
+    {
+        
+        $this->listas = $listas;
+        $this->bancas = $bancas;
+
+        $this->resultados = array_fill_keys(array_keys($listas), 0);
+
+    }
+        
     /**
      * Devuelve un array con cantidad de eltos. = a la cantidad de bancas a repartir
      * en cada elto, el valor es igual al valor correspondiente en array $listas.
      * La metodologia para repartir es el sistema DHONT.
      * 
-     * @param int   $bancas Cantidad de bancas/escanos.
-     * @param array $listas Identificadores de las listas que compiten 
-     * por bancas. Estructura {'identificador' => $votosObtenidos}
      * 
      * @return array distribucion de bancas a listas {banca => $lista}
      */
-    public function repartirBancas($bancas, $listas)
+    private function repartirBancas()
     {
-        asort($listas);
-        $listas = array_reverse($listas, true);
-        $bancas = $this->_createBancasDivisores($bancas, $listas);
-        foreach ($bancas as $key => $b) {
-            $max = $this->_getMaxCociente($listas);
-            $bancas[$key] = $max['identificador'];
+        asort($this->listas);
+        $this->listas = array_reverse($this->listas, true);
+        $reparto_bancas = $this->_createBancasDivisores();
+        foreach ($reparto_bancas as $key => $b) {
+            $max = $this->_getMaxCociente();
+            $reparto_bancas[$key] = $max['identificador'];
         }
-        return $bancas;
+        return $reparto_bancas;
     }
+
+
+    /**
+     * Devuelve un array con cantidad de representantes por partido
+     * 
+     * @return array distribucion de bancas a listas {banca => $lista}
+     */
+    public function escribeBancas()
+    {
+        $reparto_bancas = $this->repartirBancas();
+
+        $partidos = array_keys($this->listas);
+
+        $resultados = array_fill_keys($partidos, 0);
+
+        foreach ($reparto_bancas as $i => $banco) {
+            foreach ($partidos as $j => $partido) {
+                // echo $banco .' --- '. $partido . PHP_EOL;
+                if( $banco == $partido ){
+                    $resultados[$partido] ++;
+                }
+            }
+        }
+
+        return $resultados;
+
+    }    
     
     /**
      * Devuelve un array de bancas con eltos = false, y cantidad igual a $bancas.
@@ -49,14 +92,14 @@ class Dhont
      * @return array con estructura [$bancas, $divisores]. en detalle: <pre>
      *    [false, false, ...], // count = $bancas 
      */
-    private function _createBancasDivisores($bancas, $listas)
+    private function _createBancasDivisores()
     {
-        $bancas = array_fill(0, $bancas, false);
+        $reparto_bancas = array_fill(0, $this->bancas, false);
         $this->divisores = array_combine(
-            array_keys($listas), 
-            array_fill(0, count($listas), 1)
+            array_keys($this->listas), 
+            array_fill(0, count($this->listas), 1)
         );
-        return $bancas;
+        return $reparto_bancas;
     }
 
     /**
@@ -69,10 +112,10 @@ class Dhont
      * 
      * @return array Estructutra {'identificador' => $lista, 'cociente' => $maxCociente}
      */
-    private function _getMaxCociente($listas)
+    private function _getMaxCociente()
     {
         $max = array('identificador' => null, 'cociente' => -1);
-        foreach ($listas as $identificador => $votos) {
+        foreach ($this->listas as $identificador => $votos) {
             $cociente = $votos / $this->divisores[$identificador];
             if ($max['cociente'] < $cociente) {
                 // si algun max cociente empata con otro, prevalece el de la lista 
